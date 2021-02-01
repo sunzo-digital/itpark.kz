@@ -1,0 +1,6 @@
+.idea
+требования.txt
+vendor
+composer.lock
+db_test.php
+raw.php
