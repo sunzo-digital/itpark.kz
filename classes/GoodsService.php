@@ -5,6 +5,7 @@ namespace Goods;
 
 
 use Generator;
+use PDO;
 
 class GoodsService
 {
@@ -19,16 +20,13 @@ class GoodsService
         $this->columnKeys = self::getColumnKeys($this->columnNames, $this->sheetData);
     }
 
-    protected function getColumnKeys(array $columnNames, array $sheetData) : array
+    protected function getColumnKeys(array $columnNames, array $sheetData): array
     {
         $res = [];
 
-        foreach ($columnNames as $k => $v)
-        {
-            foreach ($sheetData as $row)
-            {
-                if (array_search($v, $row))
-                {
+        foreach ($columnNames as $k => $v) {
+            foreach ($sheetData as $row) {
+                if (array_search($v, $row)) {
                     $res[$k] = array_search($v, $row);
                     break;
                 }
@@ -54,13 +52,17 @@ class GoodsService
         return new GoodModel($res);
     }
 
+    // TODO нужно получать все необходимые данные из БД здесь и проверять их. После этого создавать объект или логировать ошибку
     public function getAll(): array
     {
         $itemGenerator = self::itemGenerator();
         $res = [];
 
         foreach ($itemGenerator as $item)
-            $res[] = new GoodModel($item);
+            if ($this->checkElementProperty($item['vendorCodeCell']))
+                $res[] = new GoodModel($item);
+            else error_log('[' . date('d.m.Y H:i:s'). "] {$item['vendorCodeCell']}: артикул не найден в базе данных".PHP_EOL,
+                3, 'vendor_codes.log');
 
         return $res;
     }
@@ -80,6 +82,17 @@ class GoodsService
             }
         }
     }
+
+    // TODO как сделать подготовленный запрос
+    public function checkElementProperty(string $vendorCode): bool
+    {
+        $sql = "SELECT * FROM `b_iblock_element_property` WHERE `VALUE` = '{$vendorCode}'";
+        $stmt = \DB::getInstance()->pdo->query($sql);
+        if (!$stmt) return false;
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return !empty($res);
+    }
+
     /*
     private static $instances = [];
 

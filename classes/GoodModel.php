@@ -14,7 +14,14 @@ class GoodModel
     public $vendorCode;
     public $item;
     public $unit;
-    public $price;
+    public $newPrice;
+    public $sectionId; // Сейчас в таблице такого столбца нет, нужно чтобы клиент добавил
+
+    // db data
+    public $id;
+    public $iblockId;
+    public $goodPrice;
+    public $tableName;
 
     private $pdo;
 
@@ -22,12 +29,31 @@ class GoodModel
     public function __construct($pars)
     {
         $this->number = $pars['numberCell'];
-        $this->vendorCode = $pars['vendorCodeCell'];
+        $this->vendorCode = (string) $pars['vendorCodeCell'];
         $this->item = $pars['itemCell'];
         $this->unit = $pars['unitCell'];
-        $this->price = $pars['priceCell'];
+        $this->newPrice = str_replace(',', '', $pars['priceCell']);
+        $this->sectionId = str_replace(',', '', $pars['sectionId']);
 
         $this->pdo = DB::getInstance()->pdo;
+
+        try
+        {
+            if ($id = $this->getGoodId())
+            {
+                $this->id = $id;
+                $this->iblockId = $iblockId = $this->getIblockId($id);
+                $this->tableName = $tableName = $this->checkIblockTableExist($iblockId);
+                if ($tableName) {
+                    $this->goodPrice = $this->getGoodPrice($tableName, $id);
+                }
+            }
+        }
+        catch (\Error $e)
+        {
+            error_log($e, 3, "construct.log");
+        }
+
     }
 
     public function toArray(): array
@@ -38,17 +64,12 @@ class GoodModel
                 'vendorCode' => $this->vendorCode,
                 'item' => $this->item,
                 'unit' => $this->unit,
-                'price' => $this->price,
+                'newPrice' => $this->newPrice,
+                'id' => $this->id,
+                'iblockId' => $this->iblockId,
+                'goodPrice' => $this->goodPrice,
+                'tableName' => $this->tableName,
             ];
-    }
-
-    public function checkElementProperty():bool
-    {
-        $query = "SELECT * FROM `b_iblock_element_property` WHERE `VALUE` = ?";
-        $stmt = $this->pdo->prepare($query);
-        $stmt->execute([$this->vendorCode]);
-        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return !empty($res);
     }
 
 
@@ -56,12 +77,12 @@ class GoodModel
     {
         $query = "SELECT `IBLOCK_ELEMENT_ID` FROM `b_iblock_element_property` WHERE CONVERT(`VALUE` USING utf8) LIKE ?";
         $stmt = $this->pdo->prepare($query);
-        $stmt->execute(['%'.$this->vendorCode.'%']);
+        $stmt->execute(['%' . $this->vendorCode . '%']);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res['IBLOCK_ELEMENT_ID'];
     }
 
-    public function getIblockId($goodId):int
+    public function getIblockId($goodId): int
     {
         $sql = "SELECT `IBLOCK_ID` FROM `b_iblock_element` WHERE `ID` = ?";
         $stmt = $this->pdo->prepare($sql);
@@ -77,9 +98,9 @@ class GoodModel
         $sql = "SELECT IF(COUNT(*)>0, 1, 0) AS 'isExist' FROM `information_schema`.`TABLES`
         WHERE 1 AND `TABLE_SCHEMA`='itpark' AND `TABLE_NAME`= ?";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['b_iblock_'.$iblockId.'_index']);
+        $stmt->execute(['b_iblock_' . $iblockId . '_index']);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $res['isExist'] ? 'b_iblock_'.$iblockId.'_index' : false;
+        return $res['isExist'] ? 'b_iblock_' . $iblockId . '_index' : false;
     }
 
     // Условие поиска нужно изменить. Для этого необходимо понимать значения столбцов в b_iblock_77_index
@@ -92,8 +113,12 @@ class GoodModel
         return $res['VALUE_NUM'];
     }
 
-    public function setGoodPrice(int $price, int $goodId, string $table)
+    public function setGoodPrice()
     {
+//        $sql = "SELECT `VALUE_NUM` FROM `$this->tableName` WHERE `ELEMENT_ID` = ? AND `VALUE_NUM` > 0";
+//        $stmt = $this->pdo->prepare($sql);
+//        $stmt->execute([$goodId]);
+//        $res = $stmt->fetch(PDO::FETCH_ASSOC);
 
     }
 

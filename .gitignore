@@ -4,3 +4,5 @@ vendor
 composer.lock
 db_test.php
 raw.php
+construct.log
+vendor_codes.log
