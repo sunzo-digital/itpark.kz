@@ -27,7 +27,10 @@ $goodsService = new GoodsService($sheetData, $columnNames);
 //var_dump($goodsService->checkElementProperty('00000011259'));
 
 $allGoods = $goodsService->getAll();
-print_r($allGoods);
+print_r($allGoods[7]);
+var_dump($allGoods[7]->updatePrice());
+
+
 
 
 
