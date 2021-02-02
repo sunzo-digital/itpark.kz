@@ -40,20 +40,20 @@ class GoodsService
     }
 
     // TODO допиши обработку ошибок
-    public function getOneByVendorCode(string $vendorCode): GoodModel
-    {
-        $res = [];
-
-        foreach ($this->sheetData as $row) {
-            if (in_array($vendorCode, $row)) {
-                foreach ($this->columnKeys as $k => $v) {
-                    $res[$k] = $row[$v];
-                }
-            }
-        }
-
-        return new GoodModel($res);
-    }
+//    public function getOneByVendorCode(string $vendorCode): GoodModel
+//    {
+//        $res = [];
+//
+//        foreach ($this->sheetData as $row) {
+//            if (in_array($vendorCode, $row)) {
+//                foreach ($this->columnKeys as $k => $v) {
+//                    $res[$k] = $row[$v];
+//                }
+//            }
+//        }
+//
+//        return new GoodModel($res);
+//    }
 
     public function getAll(): array
     {
@@ -115,7 +115,6 @@ class GoodsService
         return $res;
     }
 
-
     //TODO протестировать эту функцию
     public function getGoodId($vendorCode)
     {
@@ -146,31 +145,5 @@ class GoodsService
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res['isExist'] ? 'b_iblock_' . $iblockId . '_index' : false;
     }
-
-    /*
-    private static $instances = [];
-
-    protected function __construct()
-    {
-    }
-
-    protected function __clone()
-    {
-    }
-
-    public function __wakeup()
-    {
-        throw new \Exception("Cannot unserialize a singleton.");
-    }
-
-    public static function getInstance(): GoodsService
-    {
-        $cls = static::class;
-        if (!isset(self::$instances[$cls])) {
-            self::$instances[$cls] = new static();
-        }
-
-        return self::$instances[$cls];
-    }*/
 
 }

@@ -7,3 +7,4 @@ raw.php
 construct.log
 vendor_codes.log
 DB_errors.log
+DB.php
