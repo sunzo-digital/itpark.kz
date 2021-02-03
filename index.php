@@ -24,36 +24,9 @@ $columnNames = [
 ];
 
 $goodsService = new GoodsService($sheetData, $columnNames);
-//var_dump($goodsService->checkElementProperty('00000011259'));
 
 $allGoods = $goodsService->getAll();
-$good = $allGoods[2];
-var_dump($good->currentPrice);
-var_dump($good->updatePrice());
-var_dump($good->currentPrice);
-
-
-
-
-
-
-
-//$ids = [];
-//foreach ($allGoods as $good)
-//{
-////    if ($goodId = $good->getGoodId())
-////        $ids[$good->vendorCode] =
-////            [
-////                'id' => $goodId,
-////                'iblockId' => $iblockId = $good->getIblockId($goodId),
-////                'tableName' => $good->checkIblockTableExist($iblockId),
-////            ];
-////
-////        if ($ids[$good->vendorCode]['tableName'])
-////        {
-////            $goodPrice = $good->getGoodPrice($ids[$good->vendorCode]['tableName'], $ids[$good->vendorCode]['id']);
-////            $ids[$good->vendorCode]['goodPrice'] = $goodPrice;
-////        }//
-//}
-//
-//print_r($ids);
+foreach ($allGoods as $good)
+{
+    $good->updatePrice();
+}

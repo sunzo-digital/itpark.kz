@@ -6,6 +6,8 @@ namespace Goods;
 
 use DB;
 use Generator;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use PDO;
 
 class GoodsService
@@ -13,14 +15,24 @@ class GoodsService
     private $sheetData;
     private $columnNames;
     private $columnKeys;
+
     private $pdo;
+    private $errorLogger;
+    private $successLogger;
 
     public function __construct(array $sheetData, array $columnNames)
     {
+        $this->pdo = DB::getInstance()->pdo;
+
+        $this->errorLogger = new Logger('errorLogger');
+        $this->errorLogger->pushHandler(new StreamHandler('logs/'.date('d-m-Y').'.error.log'), Logger::WARNING);
+        $this->successLogger = new Logger('successLogger');
+        $this->successLogger->pushHandler(new StreamHandler('logs/'.date('d-m-Y').'.success.log'), Logger::INFO);
+
         $this->sheetData = $sheetData;
         $this->columnNames = $columnNames;
         $this->columnKeys = self::getColumnKeys($this->columnNames, $this->sheetData);
-        $this->pdo = DB::getInstance()->pdo;
+
     }
 
     protected function getColumnKeys(array $columnNames, array $sheetData): array
@@ -63,7 +75,7 @@ class GoodsService
         foreach ($itemGenerator as $item)
         {
             $dbData = $this->getDBdata($item);
-            if ($dbData['error']) continue;
+            if (!$dbData) continue;
             $res[] = new GoodModel(array_merge($item, $dbData));
         }
 
@@ -86,32 +98,38 @@ class GoodsService
         }
     }
 
-    public function getDBdata(array $item): array
+    public function getDBdata(array $item)
     {
+
      $res['goodId'] = $this->getGoodId($item['vendorCodeCell']);
         if (!$res['goodId'])
         {
-            $errorMsg = "{$item['vendorCodeCell']}: артикул не найден в базе данных";
-            error_log('[' . date('d.m.Y H:i:s') . "] {$errorMsg}" . PHP_EOL,3,'DB_errors.log');
-            return ['error' => $errorMsg];
+            $this->errorLogger->warning("{$item['vendorCodeCell']}: артикул не найден в базе данных");
+            return false;
         }
 
         $res['iblockId'] = $this->getIblockId($res['goodId']);
         if (!$res['iblockId'])
         {
-            $errorMsg = "{$item['vendorCodeCell']}: не найден id каталога (iblock id)";
-            error_log('[' . date('d.m.Y H:i:s') . "] {$errorMsg}" . PHP_EOL, 3, 'DB_errors.log');
-            return ['error' => $errorMsg];
+            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден id каталога (IBLOCK_ID)");
+            return false;
+        }
+
+        $res['sectionId'] = $this->getIblockSectionId($res['goodId']);
+        if (!$res['sectionId'])
+        {
+            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден id категории (IBLOCK_SECTION_ID)");
+            return false;
         }
 
         $res['tableName'] = $this->getIblockTableName($res['iblockId']);
         if (!$res['tableName'])
         {
-            $errorMsg = "{$item['vendorCodeCell']}: не найдена таблица каталога";
-            error_log('[' . date('d.m.Y H:i:s') . "] {$errorMsg}" . PHP_EOL,3,'DB_errors.log');
-            return ['error' => $errorMsg];
+            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найдена таблица каталога");
+            return false;
         }
 
+        $this->successLogger->info("{$item['vendorCodeCell']}: данные из БД успешно получены");
         return $res;
     }
 
@@ -132,6 +150,15 @@ class GoodsService
         $stmt->execute([$goodId]);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res['IBLOCK_ID'];
+    }
+
+    public function getIblockSectionId($goodId): int
+    {
+        $sql = "SELECT `IBLOCK_SECTION_ID` FROM `b_iblock_element` WHERE `ID` = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$goodId]);
+        $res = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $res['IBLOCK_SECTION_ID'];
     }
 
     // Странный поиск, было бы лучше, если бы в таблику b_iblock добавили поле с именами таблиц
