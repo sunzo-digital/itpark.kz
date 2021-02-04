@@ -13,14 +13,21 @@ use PDO;
 class GoodsService
 {
     private $sheetData;
-    private $columnNames;
+    private $columnNames = [
+        'numberCell' => '№',
+        'vendorCodeCell' => 'Артикул',
+        'itemCell' => 'Наименование',
+        'unitCell' => 'Ед.изм.',
+        'priceCell' => 'Цена, тенге с НДС',
+        'sectionId' => 'section_id',
+    ];
     private $columnKeys;
 
     private $pdo;
-    public $errorLogger;
+    private $errorLogger;
     private $successLogger;
 
-    public function __construct(array $sheetData, array $columnNames)
+    public function __construct(array $sheetData)
     {
         $this->pdo = DB::getInstance()->pdo;
 
@@ -30,9 +37,7 @@ class GoodsService
         $this->successLogger->pushHandler(new StreamHandler('logs/'.date('d-m-Y').'.success.log'), Logger::INFO);
 
         $this->sheetData = $sheetData;
-        $this->columnNames = $columnNames;
         $this->columnKeys = self::getColumnKeys($this->columnNames, $this->sheetData);
-
     }
 
     protected function getColumnKeys(array $columnNames, array $sheetData): array

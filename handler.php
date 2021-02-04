@@ -1,4 +1,9 @@
 <?php
+if (session_status() !== PHP_SESSION_ACTIVE)
+{
+    header("HTTP/1.0 404 Not Found");
+    die();
+}
 session_start();
 
 $uploadRes = uploadFile();
@@ -20,16 +25,7 @@ $inputFileName = $uploadRes['dir'];
 $spreadsheet = IOFactory::load($inputFileName);
 $sheetData = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
-$columnNames = [
-    'numberCell' => '№',
-    'vendorCodeCell' => 'Артикул',
-    'itemCell' => 'Наименование',
-    'unitCell' => 'Ед.изм.',
-    'priceCell' => 'Цена, тенге с НДС',
-    'sectionId' => 'section_id',
-];
-
-$goodsService = new GoodsService($sheetData, $columnNames);
+$goodsService = new GoodsService($sheetData);
 $allGoods = $goodsService->getAll();
 foreach ($allGoods as $good) $good->updatePrice();
 

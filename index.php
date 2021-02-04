@@ -1,6 +1,6 @@
 <?php
 $_GET['password'] == '12345' or die('access denied');
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 ?>
 <!DOCTYPE html>
 <html>
