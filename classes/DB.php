@@ -8,7 +8,7 @@ class DB
 
     protected function __construct()
     {
-        $this->pdo = new PDO('mysql:host=localhost;dbname=itpark', 'root', 'root');
+        $this->pdo = new PDO('mysql:host=localhost;dbname=itpark_2', 'root', 'root');
     }
 
     protected function __clone()

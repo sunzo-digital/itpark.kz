@@ -17,7 +17,7 @@ class GoodsService
     private $columnKeys;
 
     private $pdo;
-    private $errorLogger;
+    public $errorLogger;
     private $successLogger;
 
     public function __construct(array $sheetData, array $columnNames)
@@ -51,21 +51,25 @@ class GoodsService
         return $res;
     }
 
-    // TODO допиши обработку ошибок
-//    public function getOneByVendorCode(string $vendorCode): GoodModel
-//    {
-//        $res = [];
-//
-//        foreach ($this->sheetData as $row) {
-//            if (in_array($vendorCode, $row)) {
-//                foreach ($this->columnKeys as $k => $v) {
-//                    $res[$k] = $row[$v];
-//                }
-//            }
-//        }
-//
-//        return new GoodModel($res);
-//    }
+    public function getOneByVendorCode(string $vendorCode)
+    {
+        $res = [];
+
+        foreach ($this->sheetData as $row)
+        {
+            if (in_array($vendorCode, $row))
+            {
+                foreach ($this->columnKeys as $k => $v)
+                {
+                    $res[$k] = $row[$v];
+                }
+            }
+        }
+
+        $dbData = $this->getDBdata($res);
+        if (!$dbData) return null;
+        return new GoodModel(array_merge($res, $dbData));
+    }
 
     public function getAll(): array
     {
@@ -104,7 +108,7 @@ class GoodsService
      $res['goodId'] = $this->getGoodId($item['vendorCodeCell']);
         if (!$res['goodId'])
         {
-            $this->errorLogger->warning("{$item['vendorCodeCell']}: артикул не найден в базе данных");
+            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден артикул в базе данных");
             return false;
         }
 
@@ -119,13 +123,6 @@ class GoodsService
         if (!$res['sectionId'])
         {
             $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден id категории (IBLOCK_SECTION_ID)");
-            return false;
-        }
-
-        $res['tableName'] = $this->getIblockTableName($res['iblockId']);
-        if (!$res['tableName'])
-        {
-            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найдена таблица каталога");
             return false;
         }
 
@@ -159,18 +156,6 @@ class GoodsService
         $stmt->execute([$goodId]);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res['IBLOCK_SECTION_ID'];
-    }
-
-    // Странный поиск, было бы лучше, если бы в таблику b_iblock добавили поле с именами таблиц
-    // Эта проблема также решается, если у нас есть фиксированный каталог (например b_iblock_77_index)
-    public function getIblockTableName(int $iblockId)
-    {
-        $sql = "SELECT IF(COUNT(*)>0, 1, 0) AS 'isExist' FROM `information_schema`.`TABLES`
-        WHERE 1 AND `TABLE_SCHEMA`='itpark' AND `TABLE_NAME`= ?";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['b_iblock_' . $iblockId . '_index']);
-        $res = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $res['isExist'] ? 'b_iblock_' . $iblockId . '_index' : false;
     }
 
 }

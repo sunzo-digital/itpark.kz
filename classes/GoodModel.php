@@ -44,12 +44,12 @@ class GoodModel
         $this->item = $pars['itemCell'];
         $this->unit = $pars['unitCell'];
         $this->newPrice = str_replace(',', '', $pars['priceCell']);
+        $this->tableName = 'b_iblock_77_index';
 
         $this->sectionId = str_replace(',', '', $pars['sectionId']);
         $this->id = $pars['goodId'];
         $this->iblockId = $pars['iblockId'];
         $this->sectionId = $pars['sectionId'];
-        $this->tableName = $pars['tableName'];
         $this->currentPrice = $this->getCurrentPrice();
     }
 
