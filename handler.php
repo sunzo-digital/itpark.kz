@@ -91,7 +91,7 @@ function getResultHtml(array $res) :string
 {
     $html = '';
     $html .= "<p>Цен успешно обновлено: <b>{$res['successCount']}</b>.</p>";
-    $html .= "<p>Не удалось обновить: <b>{$res['errorCount']}</b>.</p>";
+    $html .= "<p>Не удалось обновить: <b>{$res['errorCount']}.</p>";
     $html .= '<br><table border="1"><caption>Ошибки</caption>';
     for ($i = 0, $j = count($res['errorArr']); $i !== $j; $i++)
     {
