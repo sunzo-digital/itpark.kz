@@ -25,6 +25,7 @@ class GoodsService
     private $pdo;
     private $errorLogger;
     private $successLogger;
+    private $errors = [];
 
     public function __construct(array $sheetData)
     {
@@ -70,9 +71,10 @@ class GoodsService
             }
         }
 
-        $dbData = $this->getDBdata($res);
-        if (!$dbData) return null;
-        return new GoodModel(array_merge($res, $dbData));
+        $res['goodId'] = $this->getGoodId($vendorCode);
+        if (!$res['goodId']) return false;
+
+        return new GoodModel($res);
     }
 
     public function getAll(): array
@@ -82,9 +84,10 @@ class GoodsService
 
         foreach ($itemGenerator as $item)
         {
-            $dbData = $this->getDBdata($item);
-            if (!$dbData) continue;
-            $res[] = new GoodModel(array_merge($item, $dbData));
+            $item['goodId'] = $this->getGoodId( $item['vendorCodeCell'] );
+            if (!$item['goodId']) continue;
+
+            $res[] = new GoodModel($item);
         }
 
         return $res;
@@ -106,28 +109,30 @@ class GoodsService
         }
     }
 
-    public function getDBdata(array $item)
-    {
-
-     $res['goodId'] = $this->getGoodId($item['vendorCodeCell']);
-        if (!$res['goodId'])
-        {
-            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден артикул в базе данных");
-            return false;
-        }
-
-        $this->successLogger->info("{$item['vendorCodeCell']}: данные из БД успешно получены");
-        return $res;
-    }
-
-    //TODO протестировать эту функцию
-    public function getGoodId($vendorCode)
+    protected function getGoodId($vendorCode)
     {
         $query = "SELECT `IBLOCK_ELEMENT_ID` FROM `b_iblock_element_property` WHERE CONVERT(`VALUE` USING utf8) LIKE ?";
         $stmt = $this->pdo->prepare($query);
         $stmt->execute(['%' . $vendorCode . '%']);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$res['IBLOCK_ELEMENT_ID'])
+        {
+            $errorMsg = "{$vendorCode}: артикул не найден в базе данных";
+            $this->errorLogger->warning($errorMsg);
+            $this->errors[] = $errorMsg;
+            return false;
+        }
+
+        $this->successLogger->info("{$vendorCode}: данные из БД успешно получены");
         return $res['IBLOCK_ELEMENT_ID'];
+    }
+
+    public function getErrors()
+    {
+        $res = $this->errors;
+        $this->errors = [];
+        return $res;
     }
 
 }
