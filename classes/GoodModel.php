@@ -17,11 +17,9 @@ class GoodModel
     public $item;
     public $unit;
     public $newPrice;
-    // db data
 
+    // db data
     public $id;
-    public $iblockId;
-    public $sectionId;
     public $tableName;
     public $currentPrice;
 
@@ -35,21 +33,18 @@ class GoodModel
         $this->pdo = DB::getInstance()->pdo;
 
         $this->errorLogger = new Logger('errorLogger');
-        $this->errorLogger->pushHandler(new StreamHandler('logs/'.date('d-m-Y').'.error.log'), Logger::WARNING);
+        $this->errorLogger->pushHandler(new StreamHandler('logs/' . date('d-m-Y') . '.error.log'), Logger::WARNING);
         $this->successLogger = new Logger('successLogger');
-        $this->successLogger->pushHandler(new StreamHandler('logs/'.date('d-m-Y').'.success.log'), Logger::INFO);
+        $this->successLogger->pushHandler(new StreamHandler('logs/' . date('d-m-Y') . '.success.log'), Logger::INFO);
 
         $this->number = $pars['numberCell'];
         $this->vendorCode = (string)$pars['vendorCodeCell'];
         $this->item = $pars['itemCell'];
         $this->unit = $pars['unitCell'];
         $this->newPrice = str_replace(',', '', $pars['priceCell']);
-        $this->tableName = 'b_iblock_77_index';
+        $this->tableName = 'b_catalog_price';
 
-        $this->sectionId = str_replace(',', '', $pars['sectionId']);
         $this->id = $pars['goodId'];
-        $this->iblockId = $pars['iblockId'];
-        $this->sectionId = $pars['sectionId'];
         $this->currentPrice = $this->getCurrentPrice();
     }
 
@@ -61,8 +56,6 @@ class GoodModel
                 'id' => $this->id,
                 'currentPrice' => $this->currentPrice,
                 'newPrice' => $this->newPrice,
-                'sectionId' => $this->sectionId,
-                'iblockId' => $this->iblockId,
                 'tableName' => $this->tableName,
                 'item' => $this->item,
                 'unit' => $this->unit,
@@ -70,15 +63,13 @@ class GoodModel
             ];
     }
 
-    // Нужны ли в этих методах подготовленные запросы? По сути все данные приходят из БД.
     public function updatePrice(): bool
     {
-        $sql = "UPDATE `{$this->tableName}` SET `VALUE_NUM` = {$this->newPrice} WHERE `ELEMENT_ID` = {$this->id} 
-        AND `SECTION_ID` = {$this->sectionId} AND `VALUE` = 1";
+        $sql = "UPDATE `{$this->tableName}` SET `PRICE` = {$this->newPrice} WHERE `PRODUCT_ID` = {$this->id};
+        UPDATE `{$this->tableName}` SET `PRICE_SCALE` = {$this->newPrice} WHERE `PRODUCT_ID` = {$this->id}";
         $this->pdo->query($sql);
 
-        if ((int)$this->getCurrentPrice() !== (int)$this->newPrice)
-        {
+        if ((int)$this->getCurrentPrice() != (int)$this->newPrice) {
             $this->errorLogger->warning("{$this->vendorCode}: не удалось обновить цену");
             return false;
         }
@@ -89,15 +80,13 @@ class GoodModel
 
     public function getCurrentPrice()
     {
-        $sql = "SELECT `VALUE_NUM` FROM {$this->tableName} WHERE `ELEMENT_ID` = {$this->id} 
-        AND `SECTION_ID` = {$this->sectionId} AND `VALUE` = 1";
+        $sql = "SELECT `PRICE` FROM {$this->tableName} WHERE `PRODUCT_ID` = {$this->id}";
         $stmt = $this->pdo->query($sql);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($res['VALUE_NUM'])
-        {
-            $this->currentPrice = $res['VALUE_NUM'];
-            return $res['VALUE_NUM'];
+        if ($res['PRICE']) {
+            $this->currentPrice = $res['PRICE'];
+            return $res['PRICE'];
         }
 
         $this->errorLogger->warning("{$this->vendorCode}: не найдено поле цены в таблице {$this->tableName}");

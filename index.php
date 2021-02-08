@@ -5,7 +5,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PHP File Upload</title>
+    <title>Excel Upload</title>
 </head>
 <body>
 <?php

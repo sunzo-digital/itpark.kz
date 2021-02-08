@@ -19,7 +19,6 @@ class GoodsService
         'itemCell' => 'Наименование',
         'unitCell' => 'Ед.изм.',
         'priceCell' => 'Цена, тенге с НДС',
-        'sectionId' => 'section_id',
     ];
     private $columnKeys;
 
@@ -117,20 +116,6 @@ class GoodsService
             return false;
         }
 
-        $res['iblockId'] = $this->getIblockId($res['goodId']);
-        if (!$res['iblockId'])
-        {
-            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден id каталога (IBLOCK_ID)");
-            return false;
-        }
-
-        $res['sectionId'] = $this->getIblockSectionId($res['goodId']);
-        if (!$res['sectionId'])
-        {
-            $this->errorLogger->warning("{$item['vendorCodeCell']}: не найден id категории (IBLOCK_SECTION_ID)");
-            return false;
-        }
-
         $this->successLogger->info("{$item['vendorCodeCell']}: данные из БД успешно получены");
         return $res;
     }
@@ -143,24 +128,6 @@ class GoodsService
         $stmt->execute(['%' . $vendorCode . '%']);
         $res = $stmt->fetch(PDO::FETCH_ASSOC);
         return $res['IBLOCK_ELEMENT_ID'];
-    }
-
-    public function getIblockId($goodId): int
-    {
-        $sql = "SELECT `IBLOCK_ID` FROM `b_iblock_element` WHERE `ID` = ?";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$goodId]);
-        $res = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $res['IBLOCK_ID'];
-    }
-
-    public function getIblockSectionId($goodId): int
-    {
-        $sql = "SELECT `IBLOCK_SECTION_ID` FROM `b_iblock_element` WHERE `ID` = ?";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$goodId]);
-        $res = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $res['IBLOCK_SECTION_ID'];
     }
 
 }
